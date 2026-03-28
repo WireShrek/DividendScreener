@@ -1,33 +1,20 @@
 import { useState, useMemo } from 'react'
-import { STOCKS } from '../data/stocks'
-
-const DEFAULTS = {
-  search: '',
-  exchange: 'ALL',
-  yieldMin: '',
-  yieldMax: '',
-  sector: '',
-  divMin: '',
-  sortCol: 'dividendYield',
-  sortDir: 'desc',
-  page: 1,
-}
 
 export const PER_PAGE = 14
 
-export function useScreener() {
-  const [search, setSearch]     = useState(DEFAULTS.search)
-  const [exchange, setExchange] = useState(DEFAULTS.exchange)
-  const [yieldMin, setYieldMin] = useState(DEFAULTS.yieldMin)
-  const [yieldMax, setYieldMax] = useState(DEFAULTS.yieldMax)
-  const [sector, setSector]     = useState(DEFAULTS.sector)
-  const [divMin, setDivMin]     = useState(DEFAULTS.divMin)
-  const [sortCol, setSortCol]   = useState(DEFAULTS.sortCol)
-  const [sortDir, setSortDir]   = useState(DEFAULTS.sortDir)
-  const [page, setPage]         = useState(DEFAULTS.page)
+export function useScreener(allStocks = []) {
+  const [search, setSearch]     = useState('')
+  const [exchange, setExchange] = useState('ALL')
+  const [yieldMin, setYieldMin] = useState('')
+  const [yieldMax, setYieldMax] = useState('')
+  const [sector, setSector]     = useState('')
+  const [divMin, setDivMin]     = useState('')
+  const [sortCol, setSortCol]   = useState('dividendYield')
+  const [sortDir, setSortDir]   = useState('desc')
+  const [page, setPage]         = useState(1)
 
   const filtered = useMemo(() => {
-    let data = [...STOCKS]
+    let data = [...allStocks]
 
     if (exchange !== 'ALL') data = data.filter(s => s.exchange === exchange)
     if (search.trim()) {
@@ -51,7 +38,7 @@ export function useScreener() {
     })
 
     return data
-  }, [search, exchange, yieldMin, yieldMax, sector, divMin, sortCol, sortDir])
+  }, [allStocks, search, exchange, yieldMin, yieldMax, sector, divMin, sortCol, sortDir])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
   const safePage   = Math.min(page, totalPages)
@@ -76,9 +63,6 @@ export function useScreener() {
     setPage(1)
   }
 
-  function handleExchange(ex) { setExchange(ex); setPage(1) }
-  function handleSearch(v)    { setSearch(v);    setPage(1) }
-
   const activeFilters = [
     yieldMin !== '' && { label: `Yield ≥ ${yieldMin}%`, clear: () => setYieldMin('') },
     yieldMax !== '' && { label: `Yield ≤ ${yieldMax}%`, clear: () => setYieldMax('') },
@@ -87,14 +71,11 @@ export function useScreener() {
   ].filter(Boolean)
 
   return {
-    // state
     search, exchange, yieldMin, yieldMax, sector, divMin,
     sortCol, sortDir, page: safePage, totalPages,
-    // derived
     pageData, filtered, kpis, activeFilters,
-    // setters
-    setSearch: handleSearch,
-    setExchange: handleExchange,
+    setSearch:   v => { setSearch(v);   setPage(1) },
+    setExchange: v => { setExchange(v); setPage(1) },
     setYieldMin: v => { setYieldMin(v); setPage(1) },
     setYieldMax: v => { setYieldMax(v); setPage(1) },
     setSector:   v => { setSector(v);   setPage(1) },

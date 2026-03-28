@@ -1,92 +1,120 @@
-const FMP_BASE = 'https://financialmodelingprep.com/api/v3'
+const FMP_BASE = 'https://financialmodelingprep.com/stable'
 
-// ~300 curated dividend stocks matching DividendMax coverage
+// ~250 curated dividend stocks across NASDAQ, NYSE, LSE and Europe
 const SYMBOLS = [
-  // ── NASDAQ ────────────────────────────────────────────────────
-  'AAPL','MSFT','AVGO','INTC','CSCO','QCOM','TXN','ADI','KLAC',
-  'PAYX','ADP','FAST','SBUX','MDLZ','WBA','AMGN','GILD','TROW',
-  'CINF','FITB','HBAN','NTRS','CTAS','POOL','KHC','WBA','SIRI',
+  // ── NASDAQ ─────────────────────────────────────────────────────────
+  'AAPL','MSFT','AVGO','INTC','CSCO','QCOM','TXN','ADI','PAYX','ADP',
+  'FAST','SBUX','MDLZ','WBA','AMGN','GILD','TROW','CINF','FITB','HBAN',
+  'NTRS','CTAS','KHC','SIRI','KLAC','MCHP','NDSN','EXPD','CHRW','CTSH',
 
-  // ── NYSE / S&P 500 ────────────────────────────────────────────
+  // ── NYSE / S&P 500 ──────────────────────────────────────────────────
   // Dividend Aristocrats
   'KO','PG','JNJ','MMM','ABT','AFL','APD','ATO','BDX','BEN',
   'CAH','CAT','CB','CL','CLX','CVX','DOV','ECL','EMR','GPC',
   'GWW','HRL','IBM','ITW','KMB','LEG','LOW','MCD','MDT','MKC',
-  'NUE','PEP','PKG','PNR','PPG','ROP','SHW','SPGI','SWK','SYY',
-  'T','TGT','WMT','XOM','VZ','MO','PM','ABBV','GIS','CAG',
-  // Financials
-  'JPM','BAC','WFC','GS','MS','C','USB','PNC','TFC','COF',
-  // Healthcare
-  'UNH','CVS','CI','HUM','ELV','PFE','ABBV','BMY','LLY','MRK',
-  // Energy
-  'XOM','CVX','COP','EOG','SLB','HAL','BKR','MPC','VLO','PSX',
+  'NUE','PEP','PPG','ROP','SHW','SPGI','SWK','SYY','TGT','WMT',
+  // High yield / income
+  'T','VZ','MO','PM','ABBV','XOM','CVS','PFE','BAC','WFC',
+  'JPM','GS','C','USB','PNC','O','NNN','WPC','STAG','PSA',
   // Utilities
   'DUK','SO','D','ED','EXC','AEP','XEL','WEC','PPL','FE',
-  'ETR','CMS','NI','AES','PEG','EIX','ES','CNP','EVRG','AWK',
+  'ETR','CMS','AES','PEG','AWK','ES','CNP','EVRG','NI','EIX',
   // REITs
-  'O','NNN','WPC','STAG','PSA','EQR','AVB','PLD','DLR','AMT',
-  'CCI','SBAC','SPG','VTR','WELL','KIM','REG','ARE','BXP','MPW',
-  // Consumer
-  'HD','LOW','TGT','COST','WMT','MCD','YUM','DRI','CMG','SBUX',
-  'HSY','MKC','SJM','HRL','TSN','ADM','K','CPB','GIS','CAG',
-  // Industrial
-  'UPS','FDX','UNP','CSX','NSC','GE','HON','RTX','LMT','NOC',
-  'GD','EMR','ETN','PH','ROK','AME','FTV','GNRC','IR','XYL',
+  'EQR','AVB','PLD','DLR','AMT','CCI','SBAC','SPG','VTR','WELL',
+  'KIM','REG','ARE','BXP','MPW','EPR','SRC','COLD','CUBE','LSI',
+  // Consumer / Healthcare / Industrial
+  'HD','UPS','FDX','UNP','CSX','HON','RTX','LMT','NOC','GD',
+  'GIS','CAG','K','CPB','HSY','SJM','TSN','ADM','UNH','ELV',
+  'HUM','CI','BMY','LLY','MRK','ABBV','AMGN','ZBH','BSX','EW',
 
-  // ── LSE (London Stock Exchange) ────────────────────────────────
+  // ── LSE ────────────────────────────────────────────────────────────
   'HSBA.L','BP.L','SHEL.L','VOD.L','LLOY.L','GLEN.L','AZN.L',
   'DGE.L','RIO.L','BATS.L','IMB.L','LGEN.L','PHNX.L','ULVR.L',
   'NG.L','SSE.L','SVT.L','UU.L','TSCO.L','SBRY.L','MKS.L',
-  'NXT.L','WPP.L','REL.L','GSK.L','BA.L','BBY.L','BNZL.L',
-  'BKG.L','BLND.L','BRBY.L','CCH.L','CNA.L','CRH.L','DCC.L',
-  'EXPN.L','FERG.L','FRES.L','HIK.L','HLMA.L','IAG.L','IHG.L',
-  'ITRK.L','KGF.L','LAND.L','MNDI.L','MNG.L','NWG.L','RKT.L',
-  'SGRO.L','SKG.L','SMDS.L','SMIN.L','SN.L','STAN.L','TW.L',
-  'WTB.L','AUTO.L','AHT.L','CPG.L','BT-A.L','HWDN.L','III.L',
-  'INF.L','JD.L','ADM.L','FOUR.L','AV.L','ABF.L','BME.L',
+  'NXT.L','WPP.L','REL.L','GSK.L','BA.L','BNZL.L','BKG.L',
+  'BLND.L','BRBY.L','CCH.L','CNA.L','CRH.L','EXPN.L','FERG.L',
+  'FRES.L','HLMA.L','IAG.L','IHG.L','ITRK.L','KGF.L','LAND.L',
+  'MNDI.L','MNG.L','NWG.L','RKT.L','SGRO.L','SMIN.L','SN.L',
+  'STAN.L','TW.L','WTB.L','AHT.L','AV.L','ABF.L','III.L',
+  'BT-A.L','ADM.L','FOUR.L','BME.L','AUTO.L','CPG.L','HIK.L',
 
-  // ── Europe ─────────────────────────────────────────────────────
+  // ── Europe ─────────────────────────────────────────────────────────
   // France
-  'AI.PA','AIR.PA','BN.PA','BNP.PA','CA.PA','CS.PA','DG.PA',
-  'ENGI.PA','GLE.PA','HO.PA','MC.PA','OR.PA','ORA.PA','RI.PA',
-  'SAF.PA','SGO.PA','SU.PA','TTE.PA','VIV.PA','ACA.PA','SAN.PA',
+  'AI.PA','AIR.PA','BN.PA','BNP.PA','CS.PA','DG.PA','ENGI.PA',
+  'GLE.PA','MC.PA','OR.PA','ORA.PA','RI.PA','SAF.PA','SGO.PA',
+  'SU.PA','TTE.PA','VIV.PA','ACA.PA','HO.PA',
   // Germany
-  'ALV.DE','BAS.DE','BAYN.DE','BMW.DE','DB1.DE','DBK.DE','DHL.DE',
-  'DTE.DE','EOAN.DE','FME.DE','HEI.DE','HEN3.DE','IFX.DE','MRK.DE',
-  'MUV2.DE','RWE.DE','SAP.DE','SIE.DE','VOW3.DE','CON.DE','LIN.DE',
+  'ALV.DE','BAS.DE','BAYN.DE','BMW.DE','DBK.DE','DHL.DE','DTE.DE',
+  'EOAN.DE','HEN3.DE','IFX.DE','MRK.DE','MUV2.DE','RWE.DE','SAP.DE',
+  'SIE.DE','VOW3.DE','LIN.DE','CON.DE','FME.DE','HEI.DE',
   // Netherlands
-  'ASML.AS','HEIA.AS','INGA.AS','NN.AS','PHIA.AS','RAND.AS','UNA.AS',
+  'ASML.AS','HEIA.AS','INGA.AS','NN.AS','PHIA.AS','UNA.AS','RAND.AS',
   // Italy
-  'ENEL.MI','ENI.MI','G.MI','ISP.MI','UCG.MI','TIT.MI','STLA.MI',
+  'ENEL.MI','ENI.MI','G.MI','ISP.MI','UCG.MI','TIT.MI',
   // Spain
-  'BBVA.MC','SAN.MC','TEF.MC','IBE.MC','REP.MC','ITX.MC','ACS.MC',
-  'ELE.MC','FER.MC','MAP.MC',
+  'BBVA.MC','SAN.MC','TEF.MC','IBE.MC','REP.MC','ITX.MC','ELE.MC',
   // Switzerland
   'NESN.SW','NOVN.SW','ROG.SW','UBSG.SW','ZURN.SW',
 ]
 
-async function fetchProfileBatch(symbols) {
-  const apiKey = process.env.FMP_API_KEY
-  const chunk = symbols.join(',')
-  try {
-    const res = await fetch(`${FMP_BASE}/profile/${chunk}?apikey=${apiKey}`)
-    if (!res.ok) return []
-    const data = await res.json()
-    return Array.isArray(data) ? data : []
-  } catch {
-    return []
+// Fetch quotes in batches of 50 (free tier supports multi-symbol quote)
+async function fetchQuotes(symbols, apiKey) {
+  const quotes = {}
+  const chunkSize = 50
+  for (let i = 0; i < symbols.length; i += chunkSize) {
+    const chunk = symbols.slice(i, i + chunkSize).join(',')
+    try {
+      const r = await fetch(`${FMP_BASE}/quote?symbol=${chunk}&apikey=${apiKey}`)
+      if (!r.ok) continue
+      const data = await r.json()
+      if (Array.isArray(data)) {
+        for (const q of data) quotes[q.symbol] = q
+      }
+    } catch { continue }
   }
+  return quotes
 }
 
-function classifyExchange(p) {
-  const sym = p.symbol || ''
-  const ex  = (p.exchangeShortName || '').toUpperCase()
-  if (sym.endsWith('.L'))  return 'LSE'
-  if (['.PA','.DE','.AS','.MI','.MC','.SW'].some(s => sym.endsWith(s))) return 'EUROPE'
-  if (ex === 'NASDAQ')     return 'NASDAQ'
+// Fetch dividend calendar for next 90 days to get yields + ex-dates
+async function fetchDividends(apiKey) {
+  const today = new Date()
+  const future = new Date(today)
+  future.setDate(future.getDate() + 90)
+  const from = today.toISOString().slice(0, 10)
+  const to   = future.toISOString().slice(0, 10)
+
+  try {
+    const r = await fetch(`${FMP_BASE}/dividends-calendar?from=${from}&to=${to}&apikey=${apiKey}`)
+    if (!r.ok) return {}
+    const data = await r.json()
+    if (!Array.isArray(data)) return {}
+
+    // Index by symbol — keep latest entry per symbol
+    const divMap = {}
+    for (const d of data) {
+      if (!divMap[d.symbol] || new Date(d.date) > new Date(divMap[d.symbol].date)) {
+        divMap[d.symbol] = d
+      }
+    }
+    return divMap
+  } catch { return {} }
+}
+
+function classifyExchange(symbol, exchangeFromApi) {
+  const ex = (exchangeFromApi || '').toUpperCase()
+  if (symbol.endsWith('.L'))  return 'LSE'
+  if (['.PA','.DE','.AS','.MI','.MC','.SW'].some(s => symbol.endsWith(s))) return 'EUROPE'
+  if (ex === 'NASDAQ')        return 'NASDAQ'
   if (['EURONEXT','ETR','BIT','EPA','SWX','SIX'].includes(ex)) return 'EUROPE'
-  if (ex === 'LSE')        return 'LSE'
+  if (ex === 'LSE')           return 'LSE'
   return 'NYSE'
+}
+
+function getCurrency(symbol, exchangeFromApi) {
+  if (symbol.endsWith('.L'))   return 'GBP'
+  if (symbol.endsWith('.SW'))  return 'CHF'
+  if (['.PA','.DE','.AS','.MI','.MC'].some(s => symbol.endsWith(s))) return 'EUR'
+  return 'USD'
 }
 
 export default async function handler(req, res) {
@@ -97,33 +125,43 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'FMP_API_KEY not configured' })
   }
 
+  const apiKey = process.env.FMP_API_KEY
+
   try {
-    const profiles = []
-    const chunkSize = 50
+    // Fetch quotes and dividends in parallel
+    const [quotes, divMap] = await Promise.all([
+      fetchQuotes(SYMBOLS, apiKey),
+      fetchDividends(apiKey),
+    ])
 
-    for (let i = 0; i < SYMBOLS.length; i += chunkSize) {
-      const batch = await fetchProfileBatch(SYMBOLS.slice(i, i + chunkSize))
-      profiles.push(...batch)
-    }
+    const stocks = SYMBOLS
+      .map(symbol => {
+        const q = quotes[symbol]
+        const d = divMap[symbol]
+        if (!q || !q.price) return null
 
-    const stocks = profiles
-      .filter(p => p.symbol && p.price && p.companyName)
-      .map(p => {
-        const price = p.price ?? null
-        const div   = p.lastDiv ?? null
-        const yld   = price && div && div > 0 ? (div / price) * 100 : null
+        const price = q.price
+        const dividendPerShare = d?.dividend ?? d?.adjDividend ?? null
+        const dividendYield    = d?.yield
+          ? +d.yield.toFixed(2)
+          : (price && dividendPerShare ? +((dividendPerShare / price) * 100).toFixed(2) : null)
+
         return {
-          symbol:           p.symbol,
-          name:             p.companyName,
-          exchange:         classifyExchange(p),
-          price:            price ? +price.toFixed(2)  : null,
-          dividendPerShare: div && div > 0 ? +div.toFixed(4) : null,
-          dividendYield:    yld  ? +yld.toFixed(2)    : null,
-          currency:         p.currency ?? 'USD',
-          sector:           p.sector   ?? null,
-          mktCap:           p.mktCap   ?? null,
+          symbol,
+          name:             q.name ?? symbol,
+          exchange:         classifyExchange(symbol, q.exchange),
+          price:            +price.toFixed(2),
+          dividendPerShare: dividendPerShare ? +dividendPerShare.toFixed(4) : null,
+          dividendYield:    dividendYield || null,
+          currency:         getCurrency(symbol, q.exchange),
+          sector:           null, // not available on free quote endpoint
+          // Calendar fields
+          exDate:           d?.date        ?? null,
+          payDate:          d?.paymentDate ?? null,
+          declarationDate:  d?.declarationDate ?? null,
         }
       })
+      .filter(Boolean)
       .filter((s, i, arr) => arr.findIndex(x => x.symbol === s.symbol) === i)
       .sort((a, b) => (b.dividendYield || 0) - (a.dividendYield || 0))
 

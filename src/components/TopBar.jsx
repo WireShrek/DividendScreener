@@ -2,17 +2,18 @@ import React, { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import styles from './TopBar.module.css'
 
-export function TopBar() {
+export function TopBar({ updatedAt, onRefresh }) {
   const [refreshing, setRefreshing] = useState(false)
-  const [lastUpdated, setLastUpdated] = useState('Mar 28, 2026')
 
   function handleRefresh() {
     setRefreshing(true)
-    setTimeout(() => {
-      setRefreshing(false)
-      setLastUpdated('Just now')
-    }, 1400)
+    onRefresh?.()
+    setTimeout(() => setRefreshing(false), 1500)
   }
+
+  const timeStr = updatedAt
+    ? new Date(updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : null
 
   return (
     <header className={styles.topbar}>
@@ -49,7 +50,7 @@ export function TopBar() {
       </nav>
 
       <div className={styles.right}>
-        <span className={styles.lastUpdated}>Updated {lastUpdated}</span>
+        {timeStr && <span className={styles.lastUpdated}>Updated {timeStr}</span>}
         <button
           className={styles.refreshBtn}
           onClick={handleRefresh}
