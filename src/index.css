@@ -1,0 +1,57 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg0: #080a0f;
+  --bg1: #0e1118;
+  --bg2: #141720;
+  --bg3: #1c2030;
+  --bg4: #242840;
+  --bg5: #2e3350;
+  --border0: rgba(255,255,255,0.04);
+  --border1: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --border3: rgba(255,255,255,0.22);
+  --t0: #f0f2f8;
+  --t1: #9ba3bc;
+  --t2: #5a6280;
+  --t3: #363d58;
+  --blue: #4d9ef7;
+  --blue2: #2e7de0;
+  --blue-glow: rgba(77,158,247,0.15);
+  --blue-dim: rgba(77,158,247,0.08);
+  --green: #2dd98f;
+  --green-dim: rgba(45,217,143,0.09);
+  --amber: #f0a030;
+  --amber-dim: rgba(240,160,48,0.09);
+  --red: #e85555;
+  --red-dim: rgba(232,85,85,0.09);
+  --purple: #a78bfa;
+  --purple-dim: rgba(167,139,250,0.09);
+  --sans: 'Geist', sans-serif;
+  --mono: 'Geist Mono', monospace;
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg0);
+  color: var(--t0);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+button { cursor: pointer; font-family: var(--sans); }
+input, select { font-family: var(--sans); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border3); }
