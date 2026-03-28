@@ -1,126 +1,65 @@
 const FMP_BASE = 'https://financialmodelingprep.com/api/v3'
 
-// Fetch helper
-async function fmpGet(path) {
-  const apiKey = process.env.FMP_API_KEY
-  const url = `${FMP_BASE}${path}&apikey=${apiKey}`
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`FMP error: ${res.status} on ${path}`)
-  return res.json()
-}
+// Curated list of well-known dividend stocks across all exchanges
+// Profile endpoint is free tier — works for any symbol
+const SYMBOLS = [
+  // S&P 500 / NYSE — Dividend aristocrats & high yield
+  'AAPL','MSFT','JPM','JNJ','KO','PG','XOM','CVX','T','VZ',
+  'MO','PM','ABBV','D','DUK','GIS','O','NNN','MMM','CAT',
+  'IBM','PFE','BAC','WFC','MCD','WMT','HD','LOW','TGT','COST',
+  'UNP','UPS','EMR','APD','SHW','ECL','ITW','GPC','CINF','AFL',
+  'BEN','LEG','PNR','AOS','MKC','CLX','SYY','HRL','CBZ','FRT',
+  'ESS','AVB','PLD','PSA','EQR','SPG','VTR','WELL','DLR','AMT',
+  'CCI','SBAC','EQIX','ARE','BXP','KIM','REG','WPC','NLY','AGNC',
+  'WBA','INTC','CSCO','QCOM','TXN','ADI','PAYX','ADP','ED','SO',
+  'EXC','AEP','XEL','WEC','PPL','FE','ETR','CMS','NI','OGE',
+  'CVS','ABC','MCK','CAH','UHS','HCA','THC','OHI','LTC','SBRA',
 
-// Batch profile fetcher — splits into chunks of 50 symbols
+  // LSE
+  'HSBA.L','BP.L','SHEL.L','VOD.L','LLOY.L','GLEN.L','AZN.L',
+  'DGE.L','RIO.L','BT.L','BATS.L','IMB.L','LGEN.L','PHNX.L',
+  'ULVR.L','REL.L','NG.L','SSE.L','SVT.L','UU.L',
+
+  // European
+  'ASML','SAP','SAN','BNP.PA','ENGI.PA','ENEL.MI','ALV.DE',
+  'BAYN.DE','AIR.PA','TTE.PA','OR.PA','SU.PA','AI.PA','BN.PA',
+  'VIV.PA','ORA.PA','EDF.PA','STLA.MI','ENI.MI','G.MI',
+
+  // NASDAQ
+  'AVGO','WBA','AMGN','GILD','TROW','FAST','CHRW','EXPD','JBHT',
+  'SBUX','MDLZ','MNST','DLTR','ROST','TJX','POOL','ODFL','CTAS',
+]
+
 async function fetchProfiles(symbols) {
-  const profiles = {}
+  const apiKey = process.env.FMP_API_KEY
+  const profiles = []
   const chunkSize = 50
+
   for (let i = 0; i < symbols.length; i += chunkSize) {
     const chunk = symbols.slice(i, i + chunkSize).join(',')
     try {
-      const data = await fmpGet(`/profile/${chunk}?`)
-      for (const p of data) {
-        profiles[p.symbol] = p
-      }
+      const res = await fetch(`${FMP_BASE}/profile/${chunk}?apikey=${apiKey}`)
+      if (!res.ok) continue
+      const data = await res.json()
+      if (Array.isArray(data)) profiles.push(...data)
     } catch (e) {
-      // continue on batch errors — partial data better than none
+      // continue on batch errors
     }
   }
   return profiles
 }
 
-async function fetchSP500() {
-  const constituents = await fmpGet('/sp500_constituent?')
-  const symbols = constituents.map(c => c.symbol)
-  const profiles = await fetchProfiles(symbols)
-  return constituents.map(c => {
-    const p = profiles[c.symbol]
-    const price = p?.price ?? null
-    const div = p?.lastDiv ?? null
-    const yld = price && div ? (div / price) * 100 : null
-    return {
-      symbol: c.symbol,
-      name: p?.companyName ?? c.name,
-      exchange: 'SP500',
-      price: price ? +price.toFixed(2) : null,
-      dividendPerShare: div && div > 0 ? +div.toFixed(2) : null,
-      dividendYield: yld ? +yld.toFixed(2) : null,
-      currency: p?.currency ?? 'USD',
-      sector: p?.sector ?? c.sector ?? null,
-    }
-  })
-}
-
-async function fetchNasdaq() {
-  const constituents = await fmpGet('/nasdaq_constituent?')
-  const symbols = constituents.map(c => c.symbol)
-  const profiles = await fetchProfiles(symbols)
-  return constituents.map(c => {
-    const p = profiles[c.symbol]
-    const price = p?.price ?? null
-    const div = p?.lastDiv ?? null
-    const yld = price && div ? (div / price) * 100 : null
-    return {
-      symbol: c.symbol,
-      name: p?.companyName ?? c.name,
-      exchange: 'NASDAQ',
-      price: price ? +price.toFixed(2) : null,
-      dividendPerShare: div && div > 0 ? +div.toFixed(2) : null,
-      dividendYield: yld ? +yld.toFixed(2) : null,
-      currency: p?.currency ?? 'USD',
-      sector: p?.sector ?? c.sector ?? null,
-    }
-  })
-}
-
-async function fetchLSE() {
-  const data = await fmpGet('/stock-screener?exchange=LSE&limit=200&')
-  return data.map(s => {
-    const price = s.price ?? null
-    const div = s.lastAnnualDividend ?? null
-    const yld = price && div ? (div / price) * 100 : null
-    return {
-      symbol: s.symbol,
-      name: s.companyName,
-      exchange: 'LSE',
-      price: price ? +price.toFixed(2) : null,
-      dividendPerShare: div && div > 0 ? +div.toFixed(2) : null,
-      dividendYield: yld ? +yld.toFixed(2) : null,
-      currency: 'GBP',
-      sector: s.sector ?? null,
-    }
-  })
-}
-
-async function fetchEurope() {
-  // Fetch major European exchanges
-  const exchanges = ['EURONEXT', 'ETR', 'BIT']
-  const results = []
-  for (const ex of exchanges) {
-    try {
-      const data = await fmpGet(`/stock-screener?exchange=${ex}&limit=100&`)
-      for (const s of data) {
-        const price = s.price ?? null
-        const div = s.lastAnnualDividend ?? null
-        const yld = price && div ? (div / price) * 100 : null
-        results.push({
-          symbol: s.symbol,
-          name: s.companyName,
-          exchange: 'EUROPE',
-          price: price ? +price.toFixed(2) : null,
-          dividendPerShare: div && div > 0 ? +div.toFixed(2) : null,
-          dividendYield: yld ? +yld.toFixed(2) : null,
-          currency: s.currency ?? 'EUR',
-          sector: s.sector ?? null,
-        })
-      }
-    } catch (e) {
-      // continue
-    }
-  }
-  return results
+function mapExchange(exchangeShortName, symbol) {
+  const ex = (exchangeShortName || '').toUpperCase()
+  if (symbol.endsWith('.L'))  return 'LSE'
+  if (ex === 'NASDAQ')        return 'NASDAQ'
+  if (ex === 'NYSE')          return 'NYSE'
+  if (['EURONEXT','ETR','BIT','EPA','EBR'].includes(ex)) return 'EUROPE'
+  if (ex === 'LSE')           return 'LSE'
+  return 'NYSE'
 }
 
 export default async function handler(req, res) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET')
 
@@ -129,33 +68,35 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Fetch all exchanges in parallel
-    const [sp500, nasdaq, lse, europe] = await Promise.allSettled([
-      fetchSP500(),
-      fetchNasdaq(),
-      fetchLSE(),
-      fetchEurope(),
-    ])
+    const profiles = await fetchProfiles(SYMBOLS)
 
-    const stocks = [
-      ...(sp500.status  === 'fulfilled' ? sp500.value  : []),
-      ...(nasdaq.status === 'fulfilled' ? nasdaq.value : []),
-      ...(lse.status    === 'fulfilled' ? lse.value    : []),
-      ...(europe.status === 'fulfilled' ? europe.value : []),
-    ]
+    const stocks = profiles
+      .filter(p => p.symbol && p.price)
+      .map(p => {
+        const price = p.price ?? null
+        const div   = p.lastDiv ?? null
+        const yld   = price && div && div > 0 ? (div / price) * 100 : null
+        return {
+          symbol:           p.symbol,
+          name:             p.companyName ?? p.symbol,
+          exchange:         mapExchange(p.exchangeShortName, p.symbol),
+          price:            price ? +price.toFixed(2) : null,
+          dividendPerShare: div && div > 0 ? +div.toFixed(2) : null,
+          dividendYield:    yld ? +yld.toFixed(2) : null,
+          currency:         p.currency ?? 'USD',
+          sector:           p.sector ?? null,
+        }
+      })
+      // Deduplicate
+      .filter((s, i, arr) => arr.findIndex(x => x.symbol === s.symbol) === i)
 
-    // Deduplicate by symbol+exchange
-    const seen = new Set()
-    const unique = stocks.filter(s => {
-      const key = `${s.exchange}:${s.symbol}`
-      if (seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
-
-    // Cache for 1 hour on Vercel's CDN — saves API quota
+    // Cache 1 hour on Vercel CDN
     res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=600')
-    return res.status(200).json({ stocks: unique, updatedAt: new Date().toISOString() })
+    return res.status(200).json({
+      stocks,
+      updatedAt: new Date().toISOString(),
+      count: stocks.length,
+    })
 
   } catch (err) {
     console.error('FMP fetch error:', err)
