@@ -16,23 +16,43 @@ export function Screener() {
       <div className={styles.header}>
         <div className={styles.titleBlock}>
           <h1>Dividend Screener</h1>
-          <p>Real-time yield data · NASDAQ · S&amp;P 500 · NYSE · LSE · Europe</p>
+          <p>
+            Live yield data · NASDAQ · S&amp;P 500 · NYSE · LSE · Europe
+            {s.updatedAt && (
+              <span className={styles.updatedAt}>
+                {' '}· Updated {new Date(s.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+          </p>
         </div>
         <div className={styles.kpis}>
           <div className={styles.kpi}>
-            <span className={`${styles.kpiVal} ${styles.blue}`}>{s.kpis.count.toLocaleString()}</span>
+            <span className={`${styles.kpiVal} ${styles.blue}`}>
+              {s.loading ? '…' : s.kpis.count.toLocaleString()}
+            </span>
             <span className={styles.kpiLbl}>Stocks</span>
           </div>
           <div className={styles.kpi}>
-            <span className={`${styles.kpiVal} ${styles.green}`}>{s.kpis.avgYield}</span>
+            <span className={`${styles.kpiVal} ${styles.green}`}>
+              {s.loading ? '…' : s.kpis.avgYield}
+            </span>
             <span className={styles.kpiLbl}>Avg Yield</span>
           </div>
           <div className={styles.kpi}>
-            <span className={styles.kpiVal}>{s.kpis.maxYield}</span>
+            <span className={styles.kpiVal}>
+              {s.loading ? '…' : s.kpis.maxYield}
+            </span>
             <span className={styles.kpiLbl}>Highest</span>
           </div>
         </div>
       </div>
+
+      {/* Error banner */}
+      {s.error && (
+        <div className={styles.errorBanner}>
+          ⚠ Could not load live data: {s.error}. Showing cached or empty results.
+        </div>
+      )}
 
       {/* Filters */}
       <FilterBar
@@ -46,18 +66,25 @@ export function Screener() {
       />
 
       {/* Table */}
-      <StockTable
-        data={s.pageData}
-        sortCol={s.sortCol}
-        sortDir={s.sortDir}
-        onSort={s.handleSort}
-        page={s.page}
-        totalPages={s.totalPages}
-        onPage={s.setPage}
-        totalCount={s.filtered.length}
-        pageStart={pageStart}
-        pageEnd={pageEnd}
-      />
+      {s.loading ? (
+        <div className={styles.loadingWrap}>
+          <div className={styles.spinner} />
+          <p>Fetching live market data…</p>
+        </div>
+      ) : (
+        <StockTable
+          data={s.pageData}
+          sortCol={s.sortCol}
+          sortDir={s.sortDir}
+          onSort={s.handleSort}
+          page={s.page}
+          totalPages={s.totalPages}
+          onPage={s.setPage}
+          totalCount={s.filtered.length}
+          pageStart={pageStart}
+          pageEnd={pageEnd}
+        />
+      )}
     </div>
   )
 }
